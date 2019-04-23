@@ -2029,6 +2029,10 @@ impl<'tcx> Place<'tcx> {
             variant_index))
     }
 
+    pub fn downcast_unnamed(self, variant_index: VariantIdx) -> Place<'tcx> {
+        self.elem(ProjectionElem::Downcast(None, variant_index))
+    }
+
     pub fn index(self, index: Local) -> Place<'tcx> {
         self.elem(ProjectionElem::Index(index))
     }
@@ -2554,11 +2558,6 @@ impl<'tcx> Debug for Rvalue<'tcx> {
                                     let var_name = tcx.hir().name_by_hir_id(freevar.var_id());
                                     struct_fmt.field(&var_name.as_str(), place);
                                 }
-                                struct_fmt.field("$state", &places[freevars.len()]);
-                                for i in (freevars.len() + 1)..places.len() {
-                                    struct_fmt
-                                        .field(&format!("${}", i - freevars.len() - 1), &places[i]);
-                                }
                             });
 
                             struct_fmt.finish()
@@ -2999,7 +2998,7 @@ pub struct UnsafetyCheckResult {
 /// The layout of generator state
 #[derive(Clone, Debug, RustcEncodable, RustcDecodable, HashStable)]
 pub struct GeneratorLayout<'tcx> {
-    pub fields: Vec<LocalDecl<'tcx>>,
+    pub variant_fields: IndexVec<VariantIdx, Vec<LocalDecl<'tcx>>>,
 }
 
 #[derive(Clone, Debug, RustcEncodable, RustcDecodable, HashStable)]
@@ -3188,7 +3187,7 @@ BraceStructTypeFoldableImpl! {
 
 BraceStructTypeFoldableImpl! {
     impl<'tcx> TypeFoldable<'tcx> for GeneratorLayout<'tcx> {
-        fields
+        variant_fields
     }
 }
 
